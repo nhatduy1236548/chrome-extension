@@ -1,12 +1,17 @@
 import { Client } from '@notionhq/client'
-import { useEffect, useState } from 'react'
+import React,{ useEffect, useState } from 'react'
+
+interface PageData {
+  title?: string,
+  url?: string
+}
 
 export default function Home() {
-  const [pageData, setPageData] = useState({})
+  const [pageData, setPageData] = useState<PageData| null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
 
-  async function saveBookmarkToNotion(bookmark) {
+  async function saveBookmarkToNotion(bookmark: { [x: string]: FormDataEntryValue; title?: any; url?: any; tags?: any; notes?: any }) {
     // 1
     const notion = new Client({
       auth: process.env.NEXT_PUBLIC_NOTION_API_TOKEN,
@@ -16,7 +21,7 @@ export default function Home() {
       // 2
       await notion.pages.create({
         parent: {
-          database_id: process.env.NEXT_PUBLIC_NOTION_DATABASE_ID,
+          database_id: process.env.NEXT_PUBLIC_NOTION_DATABASE_ID ?? "",
         },
         properties: {
           Title: {
@@ -51,24 +56,23 @@ export default function Home() {
     }
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: Event) {
     e.preventDefault()
     setIsSaving(true)
-  
+    const { target=null } = e;
     // 1
-    const data = new FormData(e.target)
+    const data = new FormData(target)
     const bookmark = Object.fromEntries(data.entries())
   
     // 2
-    bookmark.tags = bookmark.tags
-      .split(',')
+    bookmark.tags = bookmark.tags.split(',')
       .filter((tag) => tag.trim().length !== 0)
       .map((tag) => ({
         name: tag.trim(),
       }))
   
     // 3
-    const result = await saveBookmarkToNotion(bookmark)
+    const result = await saveBookmarkToNotion(bookmark);
   
     // 4
     if (result) {
@@ -105,6 +109,7 @@ export default function Home() {
               <input
                 name="title"
                 type="text"
+                defaultValue={pageData?.title} title={pageData?.title}
                 required
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               />
@@ -123,6 +128,8 @@ export default function Home() {
               <input
                 name="languages"
                 type="text"
+                defaultValue={pageData?.url} 
+                title={pageData?.url}
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               />
               <small className="text-gray-500">Separate Languages with Commas</small>
